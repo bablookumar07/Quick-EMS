@@ -12,6 +12,7 @@ import Payslip from "./pages/payslip.jsx";
 import PrintPayslip from "./pages/printpayslip.jsx";
 import Settings from "./pages/settings.jsx";
 
+
 const App = () => {
   return (
     <>
@@ -58,9 +59,9 @@ const App = () => {
 
         {/* Print Payslip */}
         <Route
-          path="/print/payslip/:id"
-          element={<PrintPayslip />}
-        />
+  path="/printpayslip/:id"
+  element={<PrintPayslip />}
+/>
 
         {/* Unknown URL */}
         <Route

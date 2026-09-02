@@ -4,9 +4,13 @@ import Attendance from "../models/attendance.js";
 import Employee from "../models/employee.js";
 import Leave from "../models/leave.js";
 
+// ==========================================
+// INNGEST CLIENT
+// ==========================================
+
 export const inngest = new Inngest({
   id: "quick-ems",
-  isDev: true,
+  isDev: !process.env.VERCEL,
 });
 
 // ==========================================
@@ -136,7 +140,6 @@ const leaveApplicationReminder =
         "24h"
       );
 
-      // Get leave application
       const leaveApplication =
         await Leave.findById(
           leaveApplicationId

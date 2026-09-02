@@ -10,8 +10,12 @@ import Leave from "../models/leave.js";
 
 export const inngest = new Inngest({
   id: "quick-ems",
-//   isDev: process.env.INNGEST_DEV === "1",
- isDev: false,
+  isDev: false,
+});
+
+console.log("INNGEST RUNTIME CHECK:", {
+  isDevEnv: process.env.INNGEST_DEV,
+  nodeEnv: process.env.NODE_ENV,
 });
 
 // ==========================================

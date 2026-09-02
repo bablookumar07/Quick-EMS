@@ -10,11 +10,19 @@ import attendanceRouter from "./routes/attendanceRoutes.js";
 import leaveRouter from "./routes/leaveRoutes.js";
 import payslipRouter from "./routes/payslipRoutes.js";
 import dashboardRouter from "./routes/dashboardRoutes.js";
+
 import { serve } from "inngest/express";
 import {
   inngest,
   functions,
 } from "./inngest/index.js";
+
+import { version as inngestVersion } from "inngest";
+
+console.log(
+  "INNGEST SDK VERSION:",
+  inngestVersion
+);
 
 dotenv.config();
 

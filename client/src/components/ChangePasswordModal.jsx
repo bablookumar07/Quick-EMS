@@ -6,6 +6,9 @@ import {
   EyeOff,
   Save,
 } from "lucide-react";
+import toast from "react-hot-toast";
+
+import api from "../api/axios";
 
 const ChangePasswordModal = ({
   open,
@@ -23,12 +26,6 @@ const ChangePasswordModal = ({
   const [loading, setLoading] =
     useState(false);
 
-  const [message, setMessage] =
-    useState("");
-
-  const [error, setError] =
-    useState("");
-
   const [formData, setFormData] =
     useState({
       currentPassword: "",
@@ -40,51 +37,91 @@ const ChangePasswordModal = ({
     return null;
   }
 
+  // ==========================================
+  // Handle Change
+  // ==========================================
+
   const handleChange = (e) => {
-    const { name, value } =
-      e.target;
+    const {
+      name,
+      value,
+    } = e.target;
 
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
-
-    setError("");
-    setMessage("");
   };
 
-  const handleSubmit = (e) => {
+  // ==========================================
+  // Close
+  // ==========================================
+
+  const handleClose = () => {
+    if (loading) {
+      return;
+    }
+
+    setFormData({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+
+    onClose();
+  };
+
+  // ==========================================
+  // Submit
+  // ==========================================
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setError("");
-    setMessage("");
+    // ------------------------------------------
+    // Confirm Password
+    // ------------------------------------------
 
     if (
       formData.newPassword !==
       formData.confirmPassword
     ) {
-      setError(
+      toast.error(
         "New password and confirm password do not match."
       );
 
       return;
     }
 
-    if (formData.newPassword.length < 6) {
-      setError(
+    // ------------------------------------------
+    // Minimum Length
+    // ------------------------------------------
+
+    if (
+      formData.newPassword.length < 6
+    ) {
+      toast.error(
         "New password must be at least 6 characters."
       );
 
       return;
     }
 
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    // Frontend simulation
-    setTimeout(() => {
-      setLoading(false);
+      await api.post(
+        "/auth/change-password",
+        {
+          currentPassword:
+            formData.currentPassword,
 
-      setMessage(
+          newPassword:
+            formData.newPassword,
+        }
+      );
+
+      toast.success(
         "Password updated successfully."
       );
 
@@ -93,12 +130,27 @@ const ChangePasswordModal = ({
         newPassword: "",
         confirmPassword: "",
       });
-    }, 700);
+
+      onClose();
+    } catch (error) {
+      console.error(
+        "CHANGE PASSWORD ERROR:",
+        error
+      );
+
+      const message =
+        error.response?.data?.error ||
+        "Failed to update password";
+
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div
-      onClick={onClose}
+      onClick={handleClose}
       className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
     >
 
@@ -109,7 +161,10 @@ const ChangePasswordModal = ({
         className="bg-white w-full max-w-lg rounded-2xl shadow-xl"
       >
 
-        {/* Header */}
+        {/* ======================================
+            Header
+        ====================================== */}
+
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200">
 
           <div>
@@ -138,21 +193,26 @@ const ChangePasswordModal = ({
 
           <button
             type="button"
-            onClick={onClose}
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100"
+            onClick={handleClose}
+            disabled={loading}
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 disabled:opacity-50"
           >
             <X size={20} />
           </button>
 
         </div>
 
-        {/* Form */}
+        {/* ======================================
+            Form
+        ====================================== */}
+
         <form
           onSubmit={handleSubmit}
           className="p-6 space-y-5"
         >
 
           {/* Current Password */}
+
           <div>
 
             <label className="block text-sm font-medium text-slate-600 mb-2">
@@ -173,8 +233,9 @@ const ChangePasswordModal = ({
                 }
                 onChange={handleChange}
                 required
+                disabled={loading}
                 placeholder="Enter current password"
-                className="w-full px-4 py-3 pr-12 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 pr-12 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50"
               />
 
               <button
@@ -184,7 +245,8 @@ const ChangePasswordModal = ({
                     !showCurrent
                   )
                 }
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                disabled={loading}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 disabled:opacity-50"
               >
                 {showCurrent ? (
                   <EyeOff size={18} />
@@ -198,6 +260,7 @@ const ChangePasswordModal = ({
           </div>
 
           {/* New Password */}
+
           <div>
 
             <label className="block text-sm font-medium text-slate-600 mb-2">
@@ -218,8 +281,9 @@ const ChangePasswordModal = ({
                 }
                 onChange={handleChange}
                 required
+                disabled={loading}
                 placeholder="Enter new password"
-                className="w-full px-4 py-3 pr-12 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 pr-12 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50"
               />
 
               <button
@@ -227,7 +291,8 @@ const ChangePasswordModal = ({
                 onClick={() =>
                   setShowNew(!showNew)
                 }
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                disabled={loading}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 disabled:opacity-50"
               >
                 {showNew ? (
                   <EyeOff size={18} />
@@ -241,6 +306,7 @@ const ChangePasswordModal = ({
           </div>
 
           {/* Confirm Password */}
+
           <div>
 
             <label className="block text-sm font-medium text-slate-600 mb-2">
@@ -261,8 +327,9 @@ const ChangePasswordModal = ({
                 }
                 onChange={handleChange}
                 required
+                disabled={loading}
                 placeholder="Confirm new password"
-                className="w-full px-4 py-3 pr-12 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 pr-12 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50"
               />
 
               <button
@@ -272,7 +339,8 @@ const ChangePasswordModal = ({
                     !showConfirm
                   )
                 }
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                disabled={loading}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 disabled:opacity-50"
               >
                 {showConfirm ? (
                   <EyeOff size={18} />
@@ -285,27 +353,17 @@ const ChangePasswordModal = ({
 
           </div>
 
-          {/* Error */}
-          {error && (
-            <div className="px-4 py-3 rounded-lg bg-red-50 text-red-600 text-sm">
-              {error}
-            </div>
-          )}
+          {/* ====================================
+              Buttons
+          ==================================== */}
 
-          {/* Success */}
-          {message && (
-            <div className="px-4 py-3 rounded-lg bg-green-50 text-green-600 text-sm">
-              {message}
-            </div>
-          )}
-
-          {/* Buttons */}
           <div className="flex justify-end gap-3 pt-2">
 
             <button
               type="button"
-              onClick={onClose}
-              className="px-5 py-3 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+              onClick={handleClose}
+              disabled={loading}
+              className="px-5 py-3 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
             >
               Cancel
             </button>

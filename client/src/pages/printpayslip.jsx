@@ -1,113 +1,67 @@
-import { useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Printer,
-  Download,
 } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
+
+import api from "../api/axios";
 
 const PrintPayslip = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
   // ==========================================
-  // Dummy Payslip Data
+  // State
   // ==========================================
 
-  const payslips = [
-    {
-      id: "101",
+  const [payslip, setPayslip] =
+    useState(null);
 
-      employee: {
-        id: "1",
-        firstName: "Rahul",
-        lastName: "Sharma",
-        email: "rahul.sharma@example.com",
-        position: "Frontend Developer",
-        department: "Engineering",
-      },
-
-      month: "August",
-      year: "2026",
-
-      basicSalary: 50000,
-      allowances: 5000,
-      deductions: 2000,
-      netSalary: 53000,
-    },
-
-    {
-      id: "102",
-
-      employee: {
-        id: "2",
-        firstName: "Priya",
-        lastName: "Verma",
-        email: "priya.verma@example.com",
-        position: "HR Manager",
-        department: "HR",
-      },
-
-      month: "August",
-      year: "2026",
-
-      basicSalary: 45000,
-      allowances: 4000,
-      deductions: 1500,
-      netSalary: 47500,
-    },
-
-    {
-      id: "103",
-
-      employee: {
-        id: "3",
-        firstName: "Aman",
-        lastName: "Kumar",
-        email: "aman.kumar@example.com",
-        position: "Accountant",
-        department: "Finance",
-      },
-
-      month: "July",
-      year: "2026",
-
-      basicSalary: 40000,
-      allowances: 3000,
-      deductions: 1200,
-      netSalary: 41800,
-    },
-
-    {
-      id: "104",
-
-      employee: {
-        id: "4",
-        firstName: "Neha",
-        lastName: "Singh",
-        email: "neha.singh@example.com",
-        position: "Backend Developer",
-        department: "Engineering",
-      },
-
-      month: "July",
-      year: "2026",
-
-      basicSalary: 55000,
-      allowances: 6000,
-      deductions: 2500,
-      netSalary: 58500,
-    },
-  ];
+  const [loading, setLoading] =
+    useState(true);
 
   // ==========================================
-  // Find Payslip
+  // Fetch Single Payslip
   // ==========================================
 
-  const payslip = useMemo(() => {
-    return payslips.find(
-      (item) => item.id === id
-    );
+  const fetchPayslip = async () => {
+    try {
+      setLoading(true);
+
+      const response =
+        await api.get(
+          `/payslips/${id}`
+        );
+
+      setPayslip(
+        response.data.payslip
+      );
+    } catch (error) {
+      console.error(
+        "FETCH PAYSLIP ERROR:",
+        error
+      );
+
+      const message =
+        error.response?.data?.error ||
+        "Failed to fetch payslip";
+
+      toast.error(message);
+
+      setPayslip(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ==========================================
+  // Page Load
+  // ==========================================
+
+  useEffect(() => {
+    fetchPayslip();
   }, [id]);
 
   // ==========================================
@@ -119,7 +73,7 @@ const PrintPayslip = () => {
       style: "currency",
       currency: "INR",
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(Number(amount) || 0);
   };
 
   // ==========================================
@@ -129,6 +83,26 @@ const PrintPayslip = () => {
   const handlePrint = () => {
     window.print();
   };
+
+  // ==========================================
+  // Loading
+  // ==========================================
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10 text-center max-w-md w-full">
+
+          <div className="w-8 h-8 mx-auto border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+
+          <p className="text-slate-500 mt-4">
+            Loading payslip...
+          </p>
+
+        </div>
+      </div>
+    );
+  }
 
   // ==========================================
   // Not Found
@@ -153,6 +127,7 @@ const PrintPayslip = () => {
             className="mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"
           >
             <ArrowLeft size={18} />
+
             Go Back
           </button>
 
@@ -161,6 +136,13 @@ const PrintPayslip = () => {
       </div>
     );
   }
+
+  // ==========================================
+  // Employee Data
+  // ==========================================
+
+  const employee =
+    payslip.employeeId;
 
   // ==========================================
   // JSX
@@ -176,18 +158,22 @@ const PrintPayslip = () => {
       <div className="max-w-4xl mx-auto mb-6 flex items-center justify-between print:hidden">
 
         <button
-  onClick={() => window.close()}
-  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
->
-  <ArrowLeft size={18} />
-  Back
-</button>
+          onClick={() =>
+            window.close()
+          }
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
+        >
+          <ArrowLeft size={18} />
+
+          Back
+        </button>
 
         <button
           onClick={handlePrint}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"
         >
           <Printer size={18} />
+
           Print Payslip
         </button>
 
@@ -229,7 +215,8 @@ const PrintPayslip = () => {
               </h2>
 
               <p className="text-sm text-slate-500 mt-1">
-                {payslip.month} {payslip.year}
+                {payslip.month}{" "}
+                {payslip.year}
               </p>
 
             </div>
@@ -246,6 +233,8 @@ const PrintPayslip = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
+            {/* Employee Name */}
+
             <div>
 
               <p className="text-xs font-semibold uppercase text-slate-400">
@@ -253,11 +242,14 @@ const PrintPayslip = () => {
               </p>
 
               <p className="text-base font-semibold text-slate-800 mt-1">
-                {payslip.employee.firstName}{" "}
-                {payslip.employee.lastName}
+                {employee?.firstName ||
+                  "Unknown"}{" "}
+                {employee?.lastName || ""}
               </p>
 
             </div>
+
+            {/* Email */}
 
             <div>
 
@@ -266,10 +258,13 @@ const PrintPayslip = () => {
               </p>
 
               <p className="text-sm text-slate-600 mt-1">
-                {payslip.employee.email}
+                {employee?.email ||
+                  "N/A"}
               </p>
 
             </div>
+
+            {/* Position */}
 
             <div>
 
@@ -278,10 +273,13 @@ const PrintPayslip = () => {
               </p>
 
               <p className="text-sm text-slate-600 mt-1">
-                {payslip.employee.position}
+                {employee?.position ||
+                  "N/A"}
               </p>
 
             </div>
+
+            {/* Department */}
 
             <div>
 
@@ -290,10 +288,13 @@ const PrintPayslip = () => {
               </p>
 
               <p className="text-sm text-slate-600 mt-1">
-                {payslip.employee.department}
+                {employee?.department ||
+                  "N/A"}
               </p>
 
             </div>
+
+            {/* Pay Period */}
 
             <div>
 
@@ -302,10 +303,13 @@ const PrintPayslip = () => {
               </p>
 
               <p className="text-sm text-slate-600 mt-1">
-                {payslip.month} {payslip.year}
+                {payslip.month}{" "}
+                {payslip.year}
               </p>
 
             </div>
+
+            {/* Payslip ID */}
 
             <div>
 
@@ -313,8 +317,8 @@ const PrintPayslip = () => {
                 Payslip ID
               </p>
 
-              <p className="text-sm text-slate-600 mt-1">
-                #{payslip.id}
+              <p className="text-sm text-slate-600 mt-1 break-all">
+                #{payslip._id}
               </p>
 
             </div>
@@ -342,6 +346,7 @@ const PrintPayslip = () => {
             <div className="divide-y divide-slate-100">
 
               {/* Basic Salary */}
+
               <div className="flex items-center justify-between px-5 py-4">
 
                 <span className="text-sm text-slate-600">
@@ -357,6 +362,7 @@ const PrintPayslip = () => {
               </div>
 
               {/* Allowances */}
+
               <div className="flex items-center justify-between px-5 py-4">
 
                 <span className="text-sm text-slate-600">
@@ -373,6 +379,7 @@ const PrintPayslip = () => {
               </div>
 
               {/* Deductions */}
+
               <div className="flex items-center justify-between px-5 py-4">
 
                 <span className="text-sm text-slate-600">
@@ -389,6 +396,7 @@ const PrintPayslip = () => {
               </div>
 
               {/* Net Salary */}
+
               <div className="flex items-center justify-between px-5 py-5 bg-indigo-50">
 
                 <span className="text-base font-bold text-slate-800">

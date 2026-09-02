@@ -1,141 +1,217 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CalendarCheck,
   Clock3,
   LogIn,
   LogOut,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import AttendanceStats from "../components/AttendanceStats";
 import AttendanceHistory from "../components/AttendanceHistory";
+import api from "../api/axios";
 
 const Attendance = () => {
   // ==========================================
-  // Attendance History
+  // Attendance
   // ==========================================
 
-  const [history, setHistory] = useState([
-    {
-      id: "1",
-      date: "01 Sep 2026",
-      clockIn: "09:05 AM",
-      clockOut: "06:02 PM",
-      workingHours: 8.95,
-      status: "Present",
-    },
-    {
-      id: "2",
-      date: "31 Aug 2026",
-      clockIn: "09:12 AM",
-      clockOut: "06:10 PM",
-      workingHours: 8.97,
-      status: "Late",
-    },
-    {
-      id: "3",
-      date: "29 Aug 2026",
-      clockIn: "08:58 AM",
-      clockOut: "06:00 PM",
-      workingHours: 9.03,
-      status: "Present",
-    },
-    {
-      id: "4",
-      date: "28 Aug 2026",
-      clockIn: "09:01 AM",
-      clockOut: "05:55 PM",
-      workingHours: 8.9,
-      status: "Present",
-    },
-    {
-      id: "5",
-      date: "27 Aug 2026",
-      clockIn: "09:20 AM",
-      clockOut: "06:15 PM",
-      workingHours: 8.92,
-      status: "Late",
-    },
-  ]);
+  const [history, setHistory] = useState([]);
 
   // ==========================================
   // UI States
   // ==========================================
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [isClockedIn, setIsClockedIn] =
+  const [actionLoading, setActionLoading] =
     useState(false);
 
-  const [currentClockIn, setCurrentClockIn] =
+  // ==========================================
+  // Today's Attendance
+  // ==========================================
+
+  const [todayAttendance, setTodayAttendance] =
     useState(null);
+
+  // ==========================================
+  // Fetch Attendance
+  // ==========================================
+
+  const fetchAttendance = async () => {
+    try {
+      setLoading(true);
+
+      const response =
+        await api.get("/attendance");
+
+      const attendance =
+        response.data.attendance || [];
+
+      setHistory(attendance);
+
+      // Find today's record
+      const today = new Date();
+
+      const todayRecord =
+        attendance.find((record) => {
+          const recordDate =
+            new Date(record.date);
+
+          return (
+            recordDate.getFullYear() ===
+              today.getFullYear() &&
+            recordDate.getMonth() ===
+              today.getMonth() &&
+            recordDate.getDate() ===
+              today.getDate()
+          );
+        });
+
+      setTodayAttendance(
+        todayRecord || null
+      );
+    } catch (error) {
+      console.error(
+        "FETCH ATTENDANCE ERROR:",
+        error
+      );
+
+      const message =
+        error.response?.data?.error ||
+        "Failed to fetch attendance";
+
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ==========================================
+  // Fetch on Page Load
+  // ==========================================
+
+  useEffect(() => {
+    fetchAttendance();
+  }, []);
 
   // ==========================================
   // Clock In
   // ==========================================
 
-  const handleClockIn = () => {
-    const now = new Date();
+  const handleClockIn = async () => {
+    try {
+      setActionLoading(true);
 
-    const time = now.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+      await api.post(
+        "/attendance/clock-in"
+      );
 
-    setIsClockedIn(true);
-    setCurrentClockIn(now);
+      toast.success(
+        "Clocked in successfully"
+      );
 
-    console.log("Clocked in at:", time);
+      await fetchAttendance();
+    } catch (error) {
+      console.error(
+        "CLOCK IN ERROR:",
+        error
+      );
+
+      const message =
+        error.response?.data?.error ||
+        "Failed to clock in";
+
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // ==========================================
   // Clock Out
   // ==========================================
 
-  const handleClockOut = () => {
-    if (!currentClockIn) {
-      return;
+  const handleClockOut = async () => {
+    try {
+      setActionLoading(true);
+
+      await api.post(
+        "/attendance/clock-out"
+      );
+
+      toast.success(
+        "Clocked out successfully"
+      );
+
+      await fetchAttendance();
+    } catch (error) {
+      console.error(
+        "CLOCK OUT ERROR:",
+        error
+      );
+
+      const message =
+        error.response?.data?.error ||
+        "Failed to clock out";
+
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ==========================================
+  // Format Time
+  // ==========================================
+
+  const formatTime = (date) => {
+    if (!date) {
+      return "";
     }
 
-    const now = new Date();
-
-    const clockOut = now.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    const clockInTime =
-      currentClockIn.toLocaleTimeString([], {
+    return new Date(date).toLocaleTimeString(
+      [],
+      {
         hour: "2-digit",
         minute: "2-digit",
-      });
-
-    const workingHours =
-      (now - currentClockIn) /
-      (1000 * 60 * 60);
-
-    const newRecord = {
-      id: Date.now().toString(),
-      date: now.toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
-      clockIn: clockInTime,
-      clockOut,
-      workingHours: Number(
-        workingHours.toFixed(2)
-      ),
-      status: "Present",
-    };
-
-    setHistory((currentHistory) => [
-      newRecord,
-      ...currentHistory,
-    ]);
-
-    setIsClockedIn(false);
-    setCurrentClockIn(null);
+      }
+    );
   };
+
+  // ==========================================
+  // Format History
+  // ==========================================
+
+  const formattedHistory =
+    history.map((record) => ({
+      ...record,
+
+      id: record._id,
+
+      date: new Date(
+        record.date
+      ).toLocaleDateString(
+        "en-GB",
+        {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }
+      ),
+
+      clockIn: formatTime(
+        record.clockIn
+      ),
+
+      clockOut: formatTime(
+        record.clockOut
+      ),
+
+      workingHours:
+        record.workingHours || 0,
+    }));
 
   // ==========================================
   // JSX
@@ -180,9 +256,11 @@ const Attendance = () => {
 
               <p className="text-sm text-slate-500 mt-1">
 
-                {isClockedIn
-                  ? "You are currently clocked in."
-                  : "You have not clocked in yet."}
+                {!todayAttendance
+                  ? "You have not clocked in yet."
+                  : todayAttendance.clockOut
+                    ? "You have completed today's attendance."
+                    : "You are currently clocked in."}
 
               </p>
 
@@ -191,27 +269,42 @@ const Attendance = () => {
           </div>
 
           {/* Buttons */}
+
           <div className="flex flex-col sm:flex-row gap-3">
 
-            {!isClockedIn ? (
+            {!todayAttendance ? (
 
               <button
                 onClick={handleClockIn}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"
+                disabled={actionLoading}
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:opacity-60 transition"
               >
                 <LogIn size={18} />
-                Clock In
+
+                {actionLoading
+                  ? "Clocking In..."
+                  : "Clock In"}
+              </button>
+
+            ) : !todayAttendance.clockOut ? (
+
+              <button
+                onClick={handleClockOut}
+                disabled={actionLoading}
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-red-500 text-white font-medium hover:bg-red-600 disabled:opacity-60 transition"
+              >
+                <LogOut size={18} />
+
+                {actionLoading
+                  ? "Clocking Out..."
+                  : "Clock Out"}
               </button>
 
             ) : (
 
-              <button
-                onClick={handleClockOut}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-red-500 text-white font-medium hover:bg-red-600 transition"
-              >
-                <LogOut size={18} />
-                Clock Out
-              </button>
+              <div className="px-5 py-3 rounded-lg bg-slate-100 text-slate-500 font-medium">
+                Attendance Completed
+              </div>
 
             )}
 
@@ -220,35 +313,33 @@ const Attendance = () => {
         </div>
 
         {/* Current Clock In */}
-        {isClockedIn && currentClockIn && (
 
-          <div className="mt-6 pt-5 border-t border-slate-100">
+        {todayAttendance &&
+          !todayAttendance.clockOut &&
+          todayAttendance.clockIn && (
 
-            <div className="flex items-center gap-3 text-sm text-slate-600">
+            <div className="mt-6 pt-5 border-t border-slate-100">
 
-              <Clock3
-                size={18}
-                className="text-indigo-600"
-              />
+              <div className="flex items-center gap-3 text-sm text-slate-600">
 
-              <span>
-                Clocked in at{" "}
-                <strong>
-                  {currentClockIn.toLocaleTimeString(
-                    [],
-                    {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }
-                  )}
-                </strong>
-              </span>
+                <Clock3
+                  size={18}
+                  className="text-indigo-600"
+                />
+
+                <span>
+                  Clocked in at{" "}
+                  <strong>
+                    {formatTime(
+                      todayAttendance.clockIn
+                    )}
+                  </strong>
+                </span>
+
+              </div>
 
             </div>
-
-          </div>
-
-        )}
+          )}
 
       </div>
 
@@ -260,24 +351,34 @@ const Attendance = () => {
 
         <div className="flex items-center justify-center py-20">
 
-          <p className="text-slate-500">
-            Loading attendance...
-          </p>
+          <div className="flex flex-col items-center gap-3">
+
+            <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+
+            <p className="text-slate-500">
+              Loading attendance...
+            </p>
+
+          </div>
 
         </div>
 
       ) : (
 
         <>
+
           {/* Attendance Stats */}
+
           <AttendanceStats
-            history={history}
+            history={formattedHistory}
           />
 
           {/* Attendance History */}
+
           <AttendanceHistory
-            history={history}
+            history={formattedHistory}
           />
+
         </>
 
       )}

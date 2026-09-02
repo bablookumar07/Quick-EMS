@@ -1,30 +1,70 @@
-import { ArrowLeft, Eye, EyeOff, LoaderCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  LoaderCircle,
+} from "lucide-react";
+
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 const LoginForm = ({ role, title, subtitle }) => {
+  const navigate = useNavigate();
+
+  const { login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
 
+    // Check required fields
     if (!email || !password) {
       setError("Please enter email and password");
       return;
     }
 
-    // Backend authentication will be added later
-    console.log({
-      email,
-      password,
-      role,
-    });
+    try {
+      setLoading(true);
+
+      // Login using AuthContext
+      await login(email, password, role);
+
+      // Login successful
+      navigate("/dashboard");
+    // } catch (error) {
+    //   console.error("Login error:", error);
+
+    //   const message =
+    //     error.response?.data?.error ||
+    //     "Login failed. Please check your credentials.";
+
+    //   setError(message);
+    // }
+    
+    } catch (error) {
+  console.error("LOGIN ERROR:", error);
+  console.error("RESPONSE:", error.response);
+  console.error("MESSAGE:", error.message);
+
+  const message =
+    error.response?.data?.error ||
+    error.message ||
+    "Login failed";
+
+  setError(message);
+}
+    finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -121,7 +161,9 @@ const LoginForm = ({ role, title, subtitle }) => {
 
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() =>
+                    setShowPassword(!showPassword)
+                  }
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600"
                 >
                   {showPassword ? (
@@ -147,7 +189,7 @@ const LoginForm = ({ role, title, subtitle }) => {
                 />
               )}
 
-              Sign In
+              {loading ? "Signing In..." : "Sign In"}
             </button>
 
           </form>

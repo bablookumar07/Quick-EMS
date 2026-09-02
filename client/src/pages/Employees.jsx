@@ -1,69 +1,22 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
   Search,
   Users,
   X,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import EmployeeCard from "../components/EmployeeCard";
 import EmployeeForm from "../components/EmployeeForm";
+import api from "../api/axios";
 
 const Employees = () => {
   // ==========================================
   // Employee Data
   // ==========================================
 
-  const [employees, setEmployees] = useState([
-    {
-      id: "1",
-      firstName: "Rahul",
-      lastName: "Sharma",
-      email: "rahul.sharma@example.com",
-      department: "Engineering",
-      position: "Frontend Developer",
-    },
-    {
-      id: "2",
-      firstName: "Priya",
-      lastName: "Verma",
-      email: "priya.verma@example.com",
-      department: "HR",
-      position: "HR Manager",
-    },
-    {
-      id: "3",
-      firstName: "Aman",
-      lastName: "Kumar",
-      email: "aman.kumar@example.com",
-      department: "Finance",
-      position: "Accountant",
-    },
-    {
-      id: "4",
-      firstName: "Neha",
-      lastName: "Singh",
-      email: "neha.singh@example.com",
-      department: "Engineering",
-      position: "Backend Developer",
-    },
-    {
-      id: "5",
-      firstName: "Vikas",
-      lastName: "Yadav",
-      email: "vikas.yadav@example.com",
-      department: "Marketing",
-      position: "Marketing Executive",
-    },
-    {
-      id: "6",
-      firstName: "Anjali",
-      lastName: "Gupta",
-      email: "anjali.gupta@example.com",
-      department: "Design",
-      position: "UI/UX Designer",
-    },
-  ]);
+  const [employees, setEmployees] = useState([]);
 
   // ==========================================
   // UI States
@@ -74,15 +27,16 @@ const Employees = () => {
   const [selectedDepartment, setSelectedDepartment] =
     useState("");
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Add modal
+  // ==========================================
+  // Modal States
+  // ==========================================
+
   const [createModal, setCreateModal] = useState(false);
 
-  // Edit modal
   const [editModal, setEditModal] = useState(false);
 
-  // Employee being edited
   const [selectedEmployee, setSelectedEmployee] =
     useState(null);
 
@@ -92,9 +46,44 @@ const Employees = () => {
 
   const departments = [
     ...new Set(
-      employees.map((employee) => employee.department)
+      employees
+        .map((employee) => employee.department)
+        .filter(Boolean)
     ),
   ];
+
+  // ==========================================
+  // Fetch Employees
+  // ==========================================
+
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+
+      const response = await api.get("/employees");
+
+      setEmployees(response.data.employees || []);
+    } catch (error) {
+      console.error("FETCH EMPLOYEES ERROR:", error);
+      console.error("RESPONSE:", error.response);
+
+      const message =
+        error.response?.data?.error ||
+        "Failed to fetch employees";
+
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ==========================================
+  // Fetch on Page Load
+  // ==========================================
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
 
   // ==========================================
   // Filter Employees
@@ -136,7 +125,7 @@ const Employees = () => {
   // Delete Employee
   // ==========================================
 
-  const handleDelete = (employee) => {
+  const handleDelete = async (employee) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete ${employee.firstName} ${employee.lastName}?`
     );
@@ -145,11 +134,24 @@ const Employees = () => {
       return;
     }
 
-    setEmployees((currentEmployees) =>
-      currentEmployees.filter(
-        (item) => item.id !== employee.id
-      )
-    );
+    try {
+      await api.delete(
+        `/employees/${employee._id || employee.id}`
+      );
+
+      toast.success("Employee deleted successfully");
+
+      await fetchEmployees();
+    } catch (error) {
+      console.error("DELETE EMPLOYEE ERROR:", error);
+      console.error("RESPONSE:", error.response);
+
+      const message =
+        error.response?.data?.error ||
+        "Failed to delete employee";
+
+      toast.error(message);
+    }
   };
 
   // ==========================================
@@ -165,38 +167,61 @@ const Employees = () => {
   // Add Employee
   // ==========================================
 
-  const handleAddEmployee = (employeeData) => {
-    const newEmployee = {
-      ...employeeData,
-      id: Date.now().toString(),
-    };
+  const handleAddEmployee = async (employeeData) => {
+    try {
+      await api.post(
+        "/employees",
+        employeeData
+      );
 
-    setEmployees((currentEmployees) => [
-      ...currentEmployees,
-      newEmployee,
-    ]);
+      toast.success("Employee created successfully");
 
-    setCreateModal(false);
+      setCreateModal(false);
+
+      await fetchEmployees();
+    } catch (error) {
+      console.error("CREATE EMPLOYEE ERROR:", error);
+      console.error("RESPONSE:", error.response);
+
+      const message =
+        error.response?.data?.error ||
+        "Failed to create employee";
+
+      toast.error(message);
+    }
   };
 
   // ==========================================
   // Update Employee
   // ==========================================
 
-  const handleUpdateEmployee = (updatedData) => {
-    setEmployees((currentEmployees) =>
-      currentEmployees.map((employee) =>
-        employee.id === selectedEmployee.id
-          ? {
-              ...updatedData,
-              id: employee.id,
-            }
-          : employee
-      )
-    );
+  const handleUpdateEmployee = async (updatedData) => {
+    try {
+      const employeeId =
+        selectedEmployee._id ||
+        selectedEmployee.id;
 
-    setEditModal(false);
-    setSelectedEmployee(null);
+      await api.put(
+        `/employees/${employeeId}`,
+        updatedData
+      );
+
+      toast.success("Employee updated successfully");
+
+      setEditModal(false);
+      setSelectedEmployee(null);
+
+      await fetchEmployees();
+    } catch (error) {
+      console.error("UPDATE EMPLOYEE ERROR:", error);
+      console.error("RESPONSE:", error.response);
+
+      const message =
+        error.response?.data?.error ||
+        "Failed to update employee";
+
+      toast.error(message);
+    }
   };
 
   // ==========================================
@@ -251,6 +276,7 @@ const Employees = () => {
         <div className="flex flex-col md:flex-row gap-3">
 
           {/* Search */}
+
           <div className="relative flex-1">
 
             <Search
@@ -271,6 +297,7 @@ const Employees = () => {
           </div>
 
           {/* Department Filter */}
+
           <select
             value={selectedDepartment}
             onChange={(e) =>
@@ -321,9 +348,15 @@ const Employees = () => {
 
         <div className="flex items-center justify-center py-20">
 
-          <p className="text-slate-500">
-            Loading employees...
-          </p>
+          <div className="flex flex-col items-center gap-3">
+
+            <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+
+            <p className="text-slate-500">
+              Loading employees...
+            </p>
+
+          </div>
 
         </div>
 
@@ -333,7 +366,7 @@ const Employees = () => {
 
           {filteredEmployees.map((employee) => (
             <EmployeeCard
-              key={employee.id}
+              key={employee._id || employee.id}
               employee={employee}
               onDelete={handleDelete}
               onEdit={handleEdit}
@@ -345,6 +378,7 @@ const Employees = () => {
       ) : (
 
         /* No Employees Found */
+
         <div className="bg-white border border-slate-200 rounded-xl py-16 text-center">
 
           <Users
@@ -383,6 +417,7 @@ const Employees = () => {
           >
 
             {/* Modal Header */}
+
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200">
 
               <div>
@@ -408,6 +443,7 @@ const Employees = () => {
             </div>
 
             {/* Employee Form */}
+
             <div className="p-6">
 
               <EmployeeForm
@@ -442,6 +478,7 @@ const Employees = () => {
           >
 
             {/* Modal Header */}
+
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200">
 
               <div>
@@ -465,6 +502,7 @@ const Employees = () => {
             </div>
 
             {/* Employee Form */}
+
             <div className="p-6">
 
               <EmployeeForm

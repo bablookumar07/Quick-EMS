@@ -1,164 +1,218 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 import PayslipList from "../components/payslip/PayslipList";
 import GeneratePayslipForm from "../components/payslip/GeneratePayslipForm";
 
+import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
+
 const Payslip = () => {
-
   // ==========================================
-  // Demo Role
+  // Auth
   // ==========================================
-  // true  = Admin
-  // false = Employee
 
-  const [isAdmin, setIsAdmin] = useState(true);
+  const { user } = useAuth();
+
+  const isAdmin =
+    user?.role === "admin";
 
   // ==========================================
   // Employees
   // ==========================================
 
-  const [employees] = useState([
-    {
-      id: "1",
-      firstName: "Rahul",
-      lastName: "Sharma",
-      email: "rahul.sharma@example.com",
-      position: "Frontend Developer",
-      department: "Engineering",
-    },
-    {
-      id: "2",
-      firstName: "Priya",
-      lastName: "Verma",
-      email: "priya.verma@example.com",
-      position: "HR Manager",
-      department: "HR",
-    },
-    {
-      id: "3",
-      firstName: "Aman",
-      lastName: "Kumar",
-      email: "aman.kumar@example.com",
-      position: "Accountant",
-      department: "Finance",
-    },
-    {
-      id: "4",
-      firstName: "Neha",
-      lastName: "Singh",
-      email: "neha.singh@example.com",
-      position: "Backend Developer",
-      department: "Engineering",
-    },
-  ]);
+  const [employees, setEmployees] =
+    useState([]);
 
   // ==========================================
-  // Payslip Data
+  // Payslips
   // ==========================================
 
-  const [payslips, setPayslips] = useState([
-    {
-      id: "101",
-
-      employee: employees[0],
-
-      month: "August",
-
-      year: "2026",
-
-      basicSalary: 50000,
-
-      allowances: 5000,
-
-      deductions: 2000,
-
-      netSalary: 53000,
-    },
-
-    {
-      id: "102",
-
-      employee: employees[1],
-
-      month: "August",
-
-      year: "2026",
-
-      basicSalary: 45000,
-
-      allowances: 4000,
-
-      deductions: 1500,
-
-      netSalary: 47500,
-    },
-
-    {
-      id: "103",
-
-      employee: employees[2],
-
-      month: "July",
-
-      year: "2026",
-
-      basicSalary: 40000,
-
-      allowances: 3000,
-
-      deductions: 1200,
-
-      netSalary: 41800,
-    },
-
-    {
-      id: "104",
-
-      employee: employees[3],
-
-      month: "July",
-
-      year: "2026",
-
-      basicSalary: 55000,
-
-      allowances: 6000,
-
-      deductions: 2500,
-
-      netSalary: 58500,
-    },
-  ]);
+  const [payslips, setPayslips] =
+    useState([]);
 
   // ==========================================
-  // Generate New Payslip
+  // Loading
   // ==========================================
 
-  const handlePayslipGenerated = (
-    newPayslip
-  ) => {
-    setPayslips((currentPayslips) => [
-      newPayslip,
-      ...currentPayslips,
-    ]);
+  const [loading, setLoading] =
+    useState(true);
+
+  // ==========================================
+  // Fetch Employees
+  // ==========================================
+
+  const fetchEmployees = async () => {
+    if (!isAdmin) {
+      return;
+    }
+
+    try {
+      const response =
+        await api.get("/employees");
+
+      const employeeData =
+        response.data.employees || [];
+
+      setEmployees(
+        employeeData.map((employee) => ({
+          ...employee,
+
+          id: employee._id,
+
+          firstName:
+            employee.firstName,
+
+          lastName:
+            employee.lastName,
+
+          email:
+            employee.email,
+
+          position:
+            employee.position,
+
+          department:
+            employee.department,
+        }))
+      );
+    } catch (error) {
+      console.error(
+        "FETCH EMPLOYEES ERROR:",
+        error
+      );
+
+      const message =
+        error.response?.data?.error ||
+        "Failed to fetch employees";
+
+      toast.error(message);
+    }
   };
 
   // ==========================================
-  // Employee Payslips
+  // Fetch Payslips
   // ==========================================
 
-  const employeePayslips = payslips.filter(
-    (payslip) =>
-      payslip.employee.id === "1"
-  );
+  const fetchPayslips = async () => {
+    try {
+      setLoading(true);
+
+      const response =
+        await api.get("/payslips");
+
+      setPayslips(
+        response.data.payslips || []
+      );
+    } catch (error) {
+      console.error(
+        "FETCH PAYSLIPS ERROR:",
+        error
+      );
+
+      const message =
+        error.response?.data?.error ||
+        "Failed to fetch payslips";
+
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ==========================================
-  // Data according to role
+  // Page Load
   // ==========================================
 
-  const visiblePayslips = isAdmin
-    ? payslips
-    : employeePayslips;
+  useEffect(() => {
+    fetchEmployees();
+    fetchPayslips();
+  }, [isAdmin]);
+
+  // ==========================================
+  // Generate Payslip
+  // ==========================================
+
+  const handlePayslipGenerated =
+    async (formData) => {
+      try {
+        await api.post(
+          "/payslips",
+          formData
+        );
+
+        toast.success(
+          "Payslip generated successfully"
+        );
+
+        await fetchPayslips();
+      } catch (error) {
+        console.error(
+          "GENERATE PAYSLIP ERROR:",
+          error
+        );
+
+        const message =
+          error.response?.data?.error ||
+          "Failed to generate payslip";
+
+        toast.error(message);
+      }
+    };
+
+  // ==========================================
+  // Format Payslips
+  // ==========================================
+
+  const formattedPayslips =
+    payslips.map((payslip) => ({
+      ...payslip,
+
+      id: payslip._id,
+
+      employee: payslip.employeeId
+        ? {
+            id: payslip.employeeId._id,
+
+            firstName:
+              payslip.employeeId.firstName,
+
+            lastName:
+              payslip.employeeId.lastName,
+
+            email:
+              payslip.employeeId.email,
+
+            position:
+              payslip.employeeId.position,
+
+            department:
+              payslip.employeeId.department,
+          }
+        : null,
+    }));
+
+  // ==========================================
+  // Loading
+  // ==========================================
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+
+        <div className="flex flex-col items-center gap-3">
+
+          <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+
+          <p className="text-slate-500">
+            Loading payslips...
+          </p>
+
+        </div>
+
+      </div>
+    );
+  }
 
   // ==========================================
   // JSX
@@ -187,7 +241,10 @@ const Payslip = () => {
 
         </div>
 
-        {/* Admin Generate Button */}
+        {/* ======================================
+            Admin Generate Form
+        ====================================== */}
+
         {isAdmin && (
           <GeneratePayslipForm
             employees={employees}
@@ -204,7 +261,7 @@ const Payslip = () => {
       ======================================== */}
 
       <PayslipList
-        payslips={visiblePayslips}
+        payslips={formattedPayslips}
         isAdmin={isAdmin}
       />
 

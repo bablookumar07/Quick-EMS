@@ -11,34 +11,42 @@ const ProfileForm = ({
   profile,
   onSuccess,
 }) => {
-  const [bio, setBio] = useState("");
+  const [bio, setBio] =
+    useState("");
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] =
+    useState(false);
 
   useEffect(() => {
     if (profile) {
-      setBio(profile.bio || "");
+      setBio(
+        profile.bio || ""
+      );
     }
   }, [profile]);
 
-  const handleSubmit = (e) => {
+  // ==========================================
+  // Submit
+  // ==========================================
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    // Frontend simulation
-    setTimeout(() => {
-      const updatedProfile = {
+      await onSuccess({
         ...profile,
         bio,
-      };
-
-      if (onSuccess) {
-        onSuccess(updatedProfile);
-      }
-
+      });
+    } catch (error) {
+      console.error(
+        "PROFILE FORM ERROR:",
+        error
+      );
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   if (!profile) {
@@ -51,7 +59,10 @@ const ProfileForm = ({
       className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden"
     >
 
-      {/* Header */}
+      {/* ========================================
+          Header
+      ======================================== */}
+
       <div className="px-6 py-5 border-b border-slate-200">
 
         <div className="flex items-center gap-3">
@@ -61,6 +72,7 @@ const ProfileForm = ({
           </div>
 
           <div>
+
             <h2 className="text-lg font-semibold text-slate-800">
               Profile Information
             </h2>
@@ -68,16 +80,21 @@ const ProfileForm = ({
             <p className="text-sm text-slate-500 mt-1">
               Manage your profile information
             </p>
+
           </div>
 
         </div>
 
       </div>
 
-      {/* Form Body */}
+      {/* ========================================
+          Form Body
+      ======================================== */}
+
       <div className="p-6 space-y-5">
 
         {/* Full Name */}
+
         <div>
 
           <label className="flex items-center gap-2 text-sm font-medium text-slate-600 mb-2">
@@ -93,7 +110,7 @@ const ProfileForm = ({
 
           <input
             type="text"
-            value={`${profile.firstName} ${profile.lastName}`}
+            value={`${profile.firstName || ""} ${profile.lastName || ""}`}
             disabled
             className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed"
           />
@@ -101,6 +118,7 @@ const ProfileForm = ({
         </div>
 
         {/* Email */}
+
         <div>
 
           <label className="flex items-center gap-2 text-sm font-medium text-slate-600 mb-2">
@@ -116,7 +134,7 @@ const ProfileForm = ({
 
           <input
             type="email"
-            value={profile.email}
+            value={profile.email || ""}
             disabled
             className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed"
           />
@@ -124,6 +142,7 @@ const ProfileForm = ({
         </div>
 
         {/* Position */}
+
         <div>
 
           <label className="flex items-center gap-2 text-sm font-medium text-slate-600 mb-2">
@@ -139,7 +158,9 @@ const ProfileForm = ({
 
           <input
             type="text"
-            value={profile.position}
+            value={
+              profile.position || ""
+            }
             disabled
             className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed"
           />
@@ -147,6 +168,7 @@ const ProfileForm = ({
         </div>
 
         {/* Bio */}
+
         <div>
 
           <label className="flex items-center gap-2 text-sm font-medium text-slate-600 mb-2">
@@ -167,14 +189,18 @@ const ProfileForm = ({
             }
             rows={5}
             placeholder="Tell us something about yourself..."
-            className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none resize-none focus:ring-2 focus:ring-indigo-500"
+            disabled={loading}
+            className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none resize-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50"
           />
 
         </div>
 
       </div>
 
-      {/* Footer */}
+      {/* ========================================
+          Footer
+      ======================================== */}
+
       <div className="px-6 py-5 border-t border-slate-200 flex justify-end">
 
         <button

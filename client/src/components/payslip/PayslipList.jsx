@@ -7,6 +7,10 @@ const PayslipList = ({
   payslips,
   isAdmin,
 }) => {
+  // ==========================================
+  // Open Payslip
+  // ==========================================
+
   const handleDownload = (payslip) => {
     window.open(
       `/printpayslip/${payslip.id}`,
@@ -14,18 +18,29 @@ const PayslipList = ({
     );
   };
 
+  // ==========================================
+  // Currency Format
+  // ==========================================
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(Number(amount) || 0);
   };
+
+  // ==========================================
+  // JSX
+  // ==========================================
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
 
-      {/* Header */}
+      {/* ========================================
+          Header
+      ======================================== */}
+
       <div className="px-6 py-5 border-b border-slate-200">
 
         <h2 className="text-lg font-semibold text-slate-800">
@@ -40,13 +55,18 @@ const PayslipList = ({
 
       </div>
 
-      {/* Table */}
+      {/* ========================================
+          Table
+      ======================================== */}
+
       <div className="overflow-x-auto">
 
         <table className="w-full">
 
           <thead>
             <tr className="border-b border-slate-100 text-left">
+
+              {/* Employee - Admin Only */}
 
               {isAdmin && (
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">
@@ -75,12 +95,18 @@ const PayslipList = ({
 
           <tbody>
 
+            {/* ====================================
+                Empty State
+            ==================================== */}
+
             {payslips.length === 0 ? (
 
               <tr>
 
                 <td
-                  colSpan={isAdmin ? 5 : 4}
+                  colSpan={
+                    isAdmin ? 5 : 4
+                  }
                   className="px-6 py-16 text-center"
                 >
 
@@ -103,86 +129,111 @@ const PayslipList = ({
 
             ) : (
 
-              payslips.map((payslip) => (
+              payslips.map((payslip) => {
 
-                <tr
-                  key={payslip.id}
-                  className="border-b border-slate-100 last:border-none hover:bg-slate-50"
-                >
+                const employee =
+                  payslip.employee;
 
-                  {/* Employee */}
-                  {isAdmin && (
+                return (
+                  <tr
+                    key={payslip.id}
+                    className="border-b border-slate-100 last:border-none hover:bg-slate-50"
+                  >
+
+                    {/* ==================================
+                        Employee
+                    ================================== */}
+
+                    {isAdmin && (
+                      <td className="px-6 py-4">
+
+                        <div>
+
+                          <p className="text-sm font-medium text-slate-700">
+                            {employee
+                              ? `${employee.firstName} ${employee.lastName}`
+                              : "Unknown Employee"}
+                          </p>
+
+                          <p className="text-xs text-slate-400">
+                            {employee?.position ||
+                              "Employee"}
+                          </p>
+
+                        </div>
+
+                      </td>
+                    )}
+
+                    {/* ==================================
+                        Period
+                    ================================== */}
+
                     <td className="px-6 py-4">
 
-                      <div>
-
-                        <p className="text-sm font-medium text-slate-700">
-                          {payslip.employee.firstName}{" "}
-                          {payslip.employee.lastName}
-                        </p>
-
-                        <p className="text-xs text-slate-400">
-                          {payslip.employee.position}
-                        </p>
-
-                      </div>
+                      <p className="text-sm font-medium text-slate-700">
+                        {payslip.month}{" "}
+                        {payslip.year}
+                      </p>
 
                     </td>
-                  )}
 
-                  {/* Period */}
-                  <td className="px-6 py-4">
+                    {/* ==================================
+                        Basic Salary
+                    ================================== */}
 
-                    <p className="text-sm font-medium text-slate-700">
-                      {payslip.month}{" "}
-                      {payslip.year}
-                    </p>
+                    <td className="px-6 py-4">
 
-                  </td>
+                      <p className="text-sm text-slate-600">
+                        {formatCurrency(
+                          payslip.basicSalary
+                        )}
+                      </p>
 
-                  {/* Basic Salary */}
-                  <td className="px-6 py-4">
+                    </td>
 
-                    <p className="text-sm text-slate-600">
-                      {formatCurrency(
-                        payslip.basicSalary
-                      )}
-                    </p>
+                    {/* ==================================
+                        Net Salary
+                    ================================== */}
 
-                  </td>
+                    <td className="px-6 py-4">
 
-                  {/* Net Salary */}
-                  <td className="px-6 py-4">
+                      <p className="text-sm font-semibold text-slate-800">
+                        {formatCurrency(
+                          payslip.netSalary
+                        )}
+                      </p>
 
-                    <p className="text-sm font-semibold text-slate-800">
-                      {formatCurrency(
-                        payslip.netSalary
-                      )}
-                    </p>
+                    </td>
 
-                  </td>
+                    {/* ==================================
+                        Action
+                    ================================== */}
 
-                  {/* Action */}
-                  <td className="px-6 py-4 text-center">
+                    <td className="px-6 py-4 text-center">
 
-                    <button
-                      onClick={() =>
-                        handleDownload(payslip)
-                      }
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 text-indigo-600 text-sm font-medium hover:bg-indigo-100 transition"
-                    >
+                      <button
+                        onClick={() =>
+                          handleDownload(
+                            payslip
+                          )
+                        }
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 text-indigo-600 text-sm font-medium hover:bg-indigo-100 transition"
+                      >
 
-                      <Download size={16} />
+                        <Download
+                          size={16}
+                        />
 
-                      Download
+                        Download
 
-                    </button>
+                      </button>
 
-                  </td>
+                    </td>
 
-                </tr>
-
-              ))
+                  </tr>
+                );
+              })
 
             )}
 

@@ -1,75 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Plus,
-  FileText,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import LeaveStats from "../components/leave/LeaveStats";
 import LeaveHistory from "../components/leave/LeaveHistory";
 import ApplyLeaveModal from "../components/leave/ApplyLeaveModal";
 
+import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
+
 const Leave = () => {
-
   // ==========================================
-  // Demo Role
+  // Auth
   // ==========================================
-  // false = Employee
-  // true  = Admin
 
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { user } = useAuth();
+
+  const isAdmin =
+    user?.role === "admin";
 
   // ==========================================
   // Leave Data
   // ==========================================
 
-  const [leaves, setLeaves] = useState([
-    {
-      id: "1",
-      employeeName: "Rahul Sharma",
-      employeeEmail: "rahul.sharma@example.com",
-      type: "sick",
-      startDate: "05 Sep 2026",
-      endDate: "06 Sep 2026",
-      reason: "Not feeling well",
-      status: "Approved",
-    },
-    {
-      id: "2",
-      employeeName: "Rahul Sharma",
-      employeeEmail: "rahul.sharma@example.com",
-      type: "casual",
-      startDate: "12 Aug 2026",
-      endDate: "12 Aug 2026",
-      reason: "Personal work",
-      status: "Pending",
-    },
-    {
-      id: "3",
-      employeeName: "Rahul Sharma",
-      employeeEmail: "rahul.sharma@example.com",
-      type: "annual",
-      startDate: "20 Jul 2026",
-      endDate: "22 Jul 2026",
-      reason: "Family vacation",
-      status: "Approved",
-    },
-    {
-      id: "4",
-      employeeName: "Rahul Sharma",
-      employeeEmail: "rahul.sharma@example.com",
-      type: "casual",
-      startDate: "10 Jun 2026",
-      endDate: "10 Jun 2026",
-      reason: "Personal appointment",
-      status: "Rejected",
-    },
-  ]);
+  const [leaves, setLeaves] = useState([]);
 
   // ==========================================
   // Loading
   // ==========================================
 
   const [loading, setLoading] =
+    useState(true);
+
+  const [actionLoading, setActionLoading] =
     useState(false);
 
   // ==========================================
@@ -80,58 +45,161 @@ const Leave = () => {
     useState(false);
 
   // ==========================================
+  // Fetch Leaves
+  // ==========================================
+
+  const fetchLeaves = async () => {
+    try {
+      setLoading(true);
+
+      const response =
+        await api.get("/leave");
+
+      setLeaves(
+        response.data.leaves || []
+      );
+    } catch (error) {
+      console.error(
+        "FETCH LEAVES ERROR:",
+        error
+      );
+
+      const message =
+        error.response?.data?.error ||
+        "Failed to fetch leave data";
+
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ==========================================
+  // Fetch on Page Load
+  // ==========================================
+
+  useEffect(() => {
+    fetchLeaves();
+  }, []);
+
+  // ==========================================
   // Apply Leave
   // ==========================================
 
-  const handleApplyLeave = (formData) => {
+  const handleApplyLeave = async (
+    formData
+  ) => {
+    try {
+      setActionLoading(true);
 
-    const newLeave = {
-      id: Date.now().toString(),
+      await api.post(
+        "/leave",
+        formData
+      );
 
-      employeeName: "Rahul Sharma",
+      toast.success(
+        "Leave applied successfully"
+      );
 
-      employeeEmail:
-        "rahul.sharma@example.com",
+      setShowModal(false);
 
-      type: formData.type,
+      await fetchLeaves();
+    } catch (error) {
+      console.error(
+        "APPLY LEAVE ERROR:",
+        error
+      );
 
-      startDate: formData.startDate,
+      const message =
+        error.response?.data?.error ||
+        "Failed to apply for leave";
 
-      endDate: formData.endDate,
-
-      reason: formData.reason,
-
-      status: "Pending",
-    };
-
-    setLeaves((currentLeaves) => [
-      newLeave,
-      ...currentLeaves,
-    ]);
-
-    setShowModal(false);
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // ==========================================
   // Admin Approve / Reject
   // ==========================================
 
-  const handleStatusUpdate = (
+  const handleStatusUpdate = async (
     leaveId,
     status
   ) => {
+    try {
+      setActionLoading(true);
 
-    setLeaves((currentLeaves) =>
-      currentLeaves.map((leave) =>
-        leave.id === leaveId
-          ? {
-              ...leave,
-              status,
-            }
-          : leave
-      )
-    );
+      await api.put(
+        `/leave/${leaveId}/status`,
+        {
+          status,
+        }
+      );
+
+      toast.success(
+        `Leave ${status.toLowerCase()} successfully`
+      );
+
+      await fetchLeaves();
+    } catch (error) {
+      console.error(
+        "UPDATE LEAVE STATUS ERROR:",
+        error
+      );
+
+      const message =
+        error.response?.data?.error ||
+        "Failed to update leave status";
+
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
+    }
   };
+
+  // ==========================================
+  // Format Leaves
+  // ==========================================
+
+  const formattedLeaves =
+    leaves.map((leave) => ({
+      ...leave,
+
+      id: leave._id,
+
+      employeeName:
+        leave.employeeId
+          ? `${leave.employeeId.firstName} ${leave.employeeId.lastName}`
+          : "Unknown Employee",
+
+      employeeEmail:
+        leave.employeeId?.email ||
+        "",
+
+      startDate: new Date(
+        leave.startDate
+      ).toLocaleDateString(
+        "en-GB",
+        {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }
+      ),
+
+      endDate: new Date(
+        leave.endDate
+      ).toLocaleDateString(
+        "en-GB",
+        {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }
+      ),
+    }));
 
   // ==========================================
   // JSX
@@ -161,12 +229,14 @@ const Leave = () => {
         </div>
 
         {/* Employee Apply Button */}
+
         {!isAdmin && (
           <button
             onClick={() =>
               setShowModal(true)
             }
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"
+            disabled={actionLoading}
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:opacity-60 transition"
           >
             <Plus size={18} />
 
@@ -182,7 +252,7 @@ const Leave = () => {
 
       {!isAdmin && (
         <LeaveStats
-          leaves={leaves}
+          leaves={formattedLeaves}
         />
       )}
 
@@ -194,16 +264,22 @@ const Leave = () => {
 
         <div className="flex items-center justify-center py-20">
 
-          <p className="text-slate-500">
-            Loading leave data...
-          </p>
+          <div className="flex flex-col items-center gap-3">
+
+            <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+
+            <p className="text-slate-500">
+              Loading leave data...
+            </p>
+
+          </div>
 
         </div>
 
       ) : (
 
         <LeaveHistory
-          leaves={leaves}
+          leaves={formattedLeaves}
           isAdmin={isAdmin}
           onUpdate={handleStatusUpdate}
         />

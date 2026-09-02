@@ -11,7 +11,7 @@ import Leave from "./pages/leave.jsx";
 import Payslip from "./pages/payslip.jsx";
 import PrintPayslip from "./pages/printpayslip.jsx";
 import Settings from "./pages/settings.jsx";
-
+import LandingPage from "./pages/LandingPage";
 
 const App = () => {
   return (
@@ -19,12 +19,18 @@ const App = () => {
       <Toaster />
 
       <Routes>
+
+        {/* Landing Page */}
+        <Route
+  path="/"
+  element={<LandingPage />}
+/>
         {/* Login */}
         <Route
           path="/login"
           element={<LoginLanding />}
         />
-
+         
         <Route
           path="/login/admin"
           element={

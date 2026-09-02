@@ -10,7 +10,8 @@ import Leave from "../models/leave.js";
 
 export const inngest = new Inngest({
   id: "quick-ems",
-  isDev: process.env.INNGEST_DEV === "1",
+//   isDev: process.env.INNGEST_DEV === "1",
+ isDev: false,
 });
 
 // ==========================================

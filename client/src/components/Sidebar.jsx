@@ -199,17 +199,27 @@ const Sidebar = () => {
       ======================================== */}
 
       {!mobileMenuOpen && (
-        <button
-          type="button"
-          onClick={() =>
-            setMobileMenuOpen(true)
-          }
-          className="lg:hidden fixed top-4 left-4 z-50 w-11 h-11 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-700 hover:bg-slate-50 transition"
-          aria-label="Open menu"
-        >
-          <Menu size={22} />
-        </button>
-      )}
+  <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-16 px-4 flex items-center bg-white/70 backdrop-blur-xl border-b border-white/40 shadow-sm">
+    <button
+      type="button"
+      onClick={() => setMobileMenuOpen(true)}
+      className="w-11 h-11 rounded-xl bg-white/60 backdrop-blur-md border border-white/60 shadow-md flex items-center justify-center text-slate-700 hover:bg-white/80 active:scale-95 transition"
+      aria-label="Open menu"
+    >
+      <Menu size={24} />
+    </button>
+
+    <div className="ml-4">
+      <h1 className="text-lg font-bold text-indigo-600">
+        Quick EMS
+      </h1>
+
+      <p className="text-[11px] text-slate-400 -mt-0.5">
+        Employee Management
+      </p>
+    </div>
+  </div>
+)}
 
 
       {/* ========================================

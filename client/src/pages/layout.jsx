@@ -44,11 +44,9 @@ const Layout = () => {
       ======================================== */}
       <main className="flex-1 min-w-0 overflow-y-auto">
 
-        <div className="w-full min-w-0 p-4 sm:p-6 md:p-8">
-
-          <Outlet />
-
-        </div>
+        <div className="w-full min-w-0 pt-20 p-4 sm:p-6 md:p-8 lg:pt-8">
+  <Outlet />
+</div>
 
       </main>
 

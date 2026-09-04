@@ -19,10 +19,7 @@ const Dashboard = () => {
 
       setData(response.data);
     } catch (error) {
-      console.error(
-        "DASHBOARD FETCH ERROR:",
-        error
-      );
+      console.error("DASHBOARD FETCH ERROR:", error);
 
       setError(
         error.response?.data?.error ||
@@ -37,13 +34,10 @@ const Dashboard = () => {
     fetchDashboard();
   }, []);
 
-  // ==========================================
   // Loading
-  // ==========================================
-
   if (loading) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
+      <div className="w-full min-h-[400px] flex items-center justify-center">
         <p className="text-slate-500">
           Loading dashboard...
         </p>
@@ -51,14 +45,11 @@ const Dashboard = () => {
     );
   }
 
-  // ==========================================
   // Error
-  // ==========================================
-
   if (error) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <div className="text-center">
+      <div className="w-full min-h-[400px] flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
           <p className="text-red-500 mb-3">
             {error}
           </p>
@@ -74,32 +65,26 @@ const Dashboard = () => {
     );
   }
 
-  // ==========================================
   // No Data
-  // ==========================================
-
   if (!data) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <p className="text-slate-500">
+      <div className="w-full min-h-[400px] flex items-center justify-center px-4">
+        <p className="text-slate-500 text-center">
           No dashboard data found.
         </p>
       </div>
     );
   }
 
-  // ==========================================
-  // Render Dashboard
-  // ==========================================
-
+  // Dashboard
   return (
-    <>
+    <div className="w-full min-w-0">
       {data.role === "admin" ? (
         <AdminDashboard data={data} />
       ) : (
         <EmployeeDashboard data={data} />
       )}
-    </>
+    </div>
   );
 };
 

@@ -156,6 +156,7 @@ connectDB();
 
 const allowedOrigins = [
   "https://quick-ems-sandy.vercel.app",
+  "https://quick-w1mkvmq50-bablookumar07s-projects.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000"
 ];

@@ -7,9 +7,10 @@ import About from "../components/landing/About";
 import Contact from "../components/landing/Contact";
 import Footer from "../components/landing/Footer";
 
-const LandingPage = () => {
+
+    const LandingPage = () => {
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen w-full overflow-x-hidden bg-slate-950">
 
       <Navbar />
 

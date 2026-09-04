@@ -153,31 +153,40 @@ connectDB();
 // ==========================================
 // Middleware & CORS Configuration
 // ==========================================
-
 const allowedOrigins = [
   "https://quick-ems-sandy.vercel.app",
-  "https://quick-w1mkvmq50-bablookumar07s-projects.vercel.app",
   "http://localhost:5173",
-  "http://localhost:3000"
+  "http://localhost:3000",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Postman, server-to-server requests ya mobile apps ke liye (!origin) allow karte hain
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS policy: This origin is not allowed"));
+      // Allow requests without an origin
+      if (!origin) {
+        return callback(null, true);
       }
+
+      // Allow production Vercel URL
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Allow all Vercel preview deployments
+      if (origin.endsWith(".vercel.app")) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("CORS policy: This origin is not allowed"));
     },
+
     credentials: true,
+
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
-app.use(express.json());
 
 // ==========================================
 // Root

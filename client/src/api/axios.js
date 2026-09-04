@@ -1,7 +1,10 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://quick-ems-backend.onrender.com/api",
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    "https://quick-ems-backend.onrender.com/api",
+
   headers: {
     "Content-Type": "application/json",
   },

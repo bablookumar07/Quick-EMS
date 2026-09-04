@@ -1,16 +1,27 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+
 import api from "../api/axios";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+
   const [token, setToken] = useState(
     localStorage.getItem("token")
   );
+
   const [loading, setLoading] = useState(true);
 
-  // Refresh session
+  // ==========================================
+  // Refresh Session
+  // ==========================================
+
   const refreshSession = async () => {
     const storedToken = localStorage.getItem("token");
 
@@ -27,8 +38,10 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data.user);
       setToken(storedToken);
     } catch (error) {
-      // Token is invalid
+      console.error("SESSION ERROR:", error);
+
       localStorage.removeItem("token");
+
       setUser(null);
       setToken(null);
     } finally {
@@ -36,31 +49,46 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Run session check when app loads
+  // ==========================================
+  // Initial Session Check
+  // ==========================================
+
   useEffect(() => {
     refreshSession();
   }, []);
 
+  // ==========================================
   // Login
+  // ==========================================
+
   const login = async (email, password, role) => {
-    const response = await api.post("/auth/login", {
-      email,
-      password,
-      role,
-    });
+    try {
+      const response = await api.post("/auth/login", {
+        email,
+        password,
+        role,
+      });
 
-    const data = response.data;
+      const data = response.data;
 
-    localStorage.setItem("token", data.token);
+      localStorage.setItem("token", data.token);
 
-    setToken(data.token);
-    setUser(data.user);
+      setToken(data.token);
+      setUser(data.user);
 
-    return data.user;
+      return data.user;
+    } catch (error) {
+      console.error("LOGIN API ERROR:", error);
+
+      throw error;
+    }
   };
 
+  // ==========================================
   // Logout
-  const logout = async () => {
+  // ==========================================
+
+  const logout = () => {
     localStorage.removeItem("token");
 
     setToken(null);
@@ -82,6 +110,10 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+// ==========================================
+// useAuth Hook
+// ==========================================
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
